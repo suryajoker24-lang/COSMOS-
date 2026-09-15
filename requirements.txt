@@ -1,4 +1,4 @@
-# Pinned Dependencies for COSMOS Exoplanet Detection System
+# COSMOS runtime dependencies
 numpy==2.2.6
 scipy==1.18.1
 pandas==2.3.2
@@ -11,7 +11,8 @@ fastapi==0.115.0
 uvicorn==0.30.0
 pydantic==2.11.7
 python-multipart==0.0.9
-pytest==8.3.0
+SQLAlchemy==2.0.43
 joblib==1.6.0
 astroquery>=0.4.7
 wotan>=1.10
+pytest==8.3.0

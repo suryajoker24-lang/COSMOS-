@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COSMOS | Interactive 3D Particle Exoplanet Intelligence</title>
+    
+    <!-- Google Fonts: Space Grotesk & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        cosmos: {
+                            ink: '#05070C',
+                            dark: '#0A0E14',
+                            card: '#0D131D',
+                            accent: '#7C9CFF',
+                            accentGlow: 'rgba(124, 156, 255, 0.25)',
+                            navy: '#0B1440',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- GSAP & ScrollTrigger CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+    <!-- Lenis Smooth Scroll CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #05070C;
+            color: #F3F4F6;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow-x: hidden;
+            selection-background-color: #7C9CFF;
+            selection-color: #05070C;
+        }
+
+        ::selection {
+            background: rgba(124, 156, 255, 0.3);
+            color: #FFFFFF;
+        }
+
+        /* Ambient Glow Blooms in Corners */
+        .ambient-bloom-tl {
+            position: fixed;
+            top: -15vw;
+            left: -15vw;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(11, 20, 64, 0.45) 0%, rgba(5, 7, 12, 0) 70%);
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .ambient-bloom-br {
+            position: fixed;
+            bottom: -20vw;
+            right: -20vw;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(20, 36, 100, 0.35) 0%, rgba(5, 7, 12, 0) 70%);
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Cursor Radial Glow Hotspot */
+        #cursorGlow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 480px;
+            height: 480px;
+            background: radial-gradient(circle, rgba(124, 156, 255, 0.08) 0%, rgba(124, 156, 255, 0) 65%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 2;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease;
+        }
+
+        /* WebGL Particle Canvas (Fixed full-bleed) */
+        #webglContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        #webglContainer canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Glassmorphic Pill Chrome */
+        .glass-pill {
+            background: rgba(10, 14, 20, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+        }
+
+        .glass-card {
+            background: rgba(13, 19, 29, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        /* Hairline Transitions */
+        .hairline-rule {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pillar-hairline-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #7C9CFF, rgba(255, 255, 255, 0.8));
+            transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Sliding Triangle Marker on Process Rail */
+        #railTriangleMarker {
+            position: absolute;
+            top: -7px;
+            left: 0%;
+            transform: translateX(-50%);
+            transition: left 0.15s ease-out;
+            filter: drop-shadow(0 0 8px rgba(124, 156, 255, 0.8));
+        }
+
+        /* Step Card Active States */
+        .step-active {
+            border-color: rgba(124, 156, 255, 0.4) !important;
+            background: rgba(20, 32, 54, 0.75) !important;
+            box-shadow: 0 0 25px rgba(124, 156, 255, 0.12);
+        }
+
+        .step-inactive {
+            opacity: 0.55;
+            transition: opacity 0.4s ease;
+        }
+
+        /* Kinetic Typography Mixed Weights */
+        .h-emphasis {
+            color: #FFFFFF;
+            font-weight: 700;
+        }
+
+        .h-connective {
+            color: rgba(243, 244, 246, 0.45);
+            font-weight: 300;
+        }
+
+        /* Preloader Styles */
+        #preloader {
+            position: fixed;
+            inset: 0;
+            background-color: #05070C;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #preloaderCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Reduced Motion Fallback */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+            #cursorGlow {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-cosmos-ink text-gray-100 antialiased selection:bg-blue-600/30">
+
+    <!-- Ambient Corner Glow Blooms -->
+    <div class="ambient-bloom-tl"></div>
+    <div class="ambient-bloom-br"></div>
+
+    <!-- Cursor Radial Glow -->
+    <div id="cursorGlow"></div>
+
+    <!-- WebGL Particle Canvas (Pinned Behind DOM) -->
+    <div id="webglContainer"></div>
+
+    <!-- Text-Safe Contrast Vignette (Guarantees crisp typography readability over particles) -->
+    <div id="textSafeVignette" class="fixed inset-0 pointer-events-none z-10" style="background: radial-gradient(circle at 50% 28%, rgba(5, 7, 12, 0.72) 0%, rgba(5, 7, 12, 0.22) 55%, rgba(5, 7, 12, 0.85) 100%);"></div>
+
+    <!-- 1. PRELOADER (Hyperspace Warp Streaks & Instrument Counter) -->
+    <div id="preloader">
+        <canvas id="preloaderCanvas"></canvas>
+        <div class="relative z-10 text-center space-y-4 max-w-sm w-full px-6">
+            <div class="w-10 h-10 mx-auto rounded-full border border-cosmos-accent/30 flex items-center justify-center text-cosmos-accent shadow-lg shadow-cosmos-accentGlow animate-spin-slow">
+                <i class="fa-solid fa-satellite text-sm"></i>
+            </div>
+            <div>
+                <p id="preloaderPercent" class="font-mono text-4xl font-semibold text-white tracking-tighter">0%</p>
+                <p id="preloaderStatusText" class="font-mono text-[11px] text-cosmos-accent/80 tracking-widest uppercase mt-1">INITIALIZING QUANTUM PHOTOMETERS...</p>
+            </div>
+            <!-- Thin 1px Progress Bar -->
+            <div class="w-full bg-white/10 h-[1px] relative overflow-hidden rounded-full">
+                <div id="preloaderBar" class="absolute top-0 left-0 h-full bg-gradient-to-r from-cosmos-accent to-white w-0 transition-all duration-100"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. FLOATING PILL NAVBAR -->
+    <header class="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-5xl">
+        <div class="glass-pill rounded-full px-5 py-2.5 flex items-center justify-between shadow-2xl shadow-black/80">
+            <!-- Left: Brand Motif + Wordmark -->
+            <a href="#section-hero" class="flex items-center space-x-2.5 group">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cosmos-accent to-blue-700 flex items-center justify-center text-white text-xs shadow-md shadow-cosmos-accentGlow group-hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-satellite"></i>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-white text-sm tracking-wider">COSMOS</span>
+                    <span class="font-mono text-[10px] text-cosmos-accent px-1.5 py-0.5 rounded-full bg-cosmos-accent/10 border border-cosmos-accent/20">KEPLER AI</span>
+                </div>
+            </a>
+
+            <!-- Center: Nav Links with Subtle Underlines -->
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="#section-hero" class="text-xs text-gray-400 hover:text-white transition-colors tracking-wide py-1 relative group">
+                    <span>Overview</span>
+                    <span class="absolute bottom-0 left-0 w-0 h-[1px] bg-cosmos-accent group-hover:w-full transition-all duration-300"></span>
+                </a>
+                <a href="#section-statement" class="text-xs text-gray-400 hover:text-white transition-colors tracking-wide py-1 relative group">
+                    <span>Transit Physics</span>
+                    <span class="absolute bottom-0 left-0 w-0 h-[1px] bg-cosmos-accent group-hover:w-full transition-all duration-300"></span>
+                </a>
+                <a href="#section-process" class="text-xs text-gray-400 hover:text-white transition-colors tracking-wide py-1 relative group">
+                    <span>Pipeline Rail</span>
+                    <span class="absolute bottom-0 left-0 w-0 h-[1px] bg-cosmos-accent group-hover:w-full transition-all duration-300"></span>
+                </a>
+                <a href="#section-convergence" class="text-xs text-gray-400 hover:text-white transition-colors tracking-wide py-1 relative group">
+                    <span>Convergence</span>
+                    <span class="absolute bottom-0 left-0 w-0 h-[1px] bg-cosmos-accent group-hover:w-full transition-all duration-300"></span>
+                </a>
+            </nav>
+
+            <!-- Right: Gradient CTA Pill with Status Dot -->
+            <div class="flex items-center space-x-3">
+                <a href="/dashboard" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-medium px-4 py-2 rounded-full flex items-center gap-2 shadow-lg shadow-blue-500/25 hover:scale-105 transition-all">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Launch Console</span>
+                    <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- MASTER SCROLL WRAPPER (Synchronizes with GSAP Master Timeline) -->
+    <div id="scrollWrapper" class="relative z-20">
+
+        <!-- ===================================================================
+             SECTION 1: HERO (Particle State: Gravitational Star Cluster)
+        ==================================================================== -->
+        <section id="section-hero" class="relative min-h-screen flex flex-col justify-between px-6 pt-32 pb-12 max-w-7xl mx-auto">
+            
+            <!-- Dedicated Headline Stage Area (Mutually exclusive single-active headlines) -->
+            <div class="text-center max-w-4xl mx-auto mt-2 space-y-4 relative z-20">
+                <div id="heroBadge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-cosmos-accent font-mono text-[11px] tracking-widest uppercase">
+                    <span class="w-1.5 h-1.5 rounded-full bg-cosmos-accent"></span>
+                    <span>Kepler Photometry AI Engine</span>
+                </div>
+
+                <!-- Fixed height stage preventing vertical collision or stacking -->
+                <div id="headlineStage" class="relative w-full min-h-[140px] sm:min-h-[160px] md:min-h-[180px] flex items-center justify-center">
+                    
+                    <!-- Headline Block 1: Initial Hero Line -->
+                    <div id="headline-block-1" class="headline-block absolute inset-0 flex items-center justify-center text-center opacity-100 visible pointer-events-auto transition-opacity duration-300">
+                        <h1 class="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-[1.12]">
+                            <span class="hero-headline-word inline-block h-emphasis">Earth-like</span>
+                            <span class="hero-headline-word inline-block h-connective">Worlds.</span>
+                            <span class="hero-headline-word inline-block h-connective">Hidden in</span>
+                            <span class="hero-headline-word inline-block h-emphasis">Plain Sight</span><span class="hero-headline-word inline-block text-cosmos-accent">.</span>
+                        </h1>
+                    </div>
+
+                    <!-- Headline Block 2: Secondary Swap Line (Strictly mutually exclusive, hidden at start) -->
+                    <div id="headline-block-2" class="headline-block absolute inset-0 flex items-center justify-center text-center opacity-0 invisible pointer-events-none transition-opacity duration-300">
+                        <h2 class="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-[1.12]">
+                            <span class="hero-headline-word inline-block h-emphasis">Autonomous</span>
+                            <span class="hero-headline-word inline-block h-connective">Discovery for</span>
+                            <span class="hero-headline-word inline-block h-emphasis">Deep Space</span>
+                            <span class="hero-headline-word inline-block h-connective">Photometry</span><span class="hero-headline-word inline-block text-cosmos-accent">.</span>
+                        </h2>
+                    </div>
+
+                </div>
+
+                <p id="heroSubtext" class="text-sm md:text-base text-gray-400 max-w-2xl mx-auto font-light leading-relaxed">
+                    Uncovering Earth analogs across 17 quarters of Kepler space telescope observations through transit-preserving adaptive detrending, dynamic harmonic BLS, and physics-calibrated machine learning.
+                </p>
+            </div>
+
+            <!-- Central 3D cluster sits directly behind this area -->
+            <div class="h-16 md:h-24"></div>
+
+            <!-- 4 Pillar Rails (Left & Right Rails) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                <!-- Pillar 1 -->
+                <div class="pillar-card glass-card rounded-xl p-4 relative group hover:border-cosmos-accent/40 transition-colors">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-mono text-[11px] text-cosmos-accent font-semibold">01 // DETRENDING</span>
+                        <i class="fa-solid fa-wave-square text-xs text-gray-500"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-white mb-1">Transit-Preserving SavGol</h3>
+                    <p class="text-xs text-gray-400 font-light leading-snug">Multi-pass outlier masking safeguards 10–16 hour Earth transit dips from baseline absorption.</p>
+                    <div class="hairline-rule mt-3">
+                        <div class="pillar-hairline-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Pillar 2 -->
+                <div class="pillar-card glass-card rounded-xl p-4 relative group hover:border-cosmos-accent/40 transition-colors">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-mono text-[11px] text-cosmos-accent font-semibold">02 // SEARCH</span>
+                        <i class="fa-solid fa-chart-line text-xs text-gray-500"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-white mb-1">Coarse-to-Fine BLS</h3>
+                    <p class="text-xs text-gray-400 font-light leading-snug">Dynamic grid evaluating 10,000+ trial periods with non-maximum suppression peak refinement.</p>
+                    <div class="hairline-rule mt-3">
+                        <div class="pillar-hairline-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Pillar 3 -->
+                <div class="pillar-card glass-card rounded-xl p-4 relative group hover:border-cosmos-accent/40 transition-colors">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-mono text-[11px] text-cosmos-accent font-semibold">03 // VETTING</span>
+                        <i class="fa-solid fa-shield-halved text-xs text-gray-500"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-white mb-1">Physics-Informed Vetting</h3>
+                    <p class="text-xs text-gray-400 font-light leading-snug">Autonomous rejection of odd/even depth anomalies, eclipsing binaries, and secondary eclipses.</p>
+                    <div class="hairline-rule mt-3">
+                        <div class="pillar-hairline-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Pillar 4 -->
+                <div class="pillar-card glass-card rounded-xl p-4 relative group hover:border-cosmos-accent/40 transition-colors">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-mono text-[11px] text-cosmos-accent font-semibold">04 // RANKER</span>
+                        <i class="fa-solid fa-microchip text-xs text-gray-500"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-white mb-1">Calibrated LightGBM</h3>
+                    <p class="text-xs text-gray-400 font-light leading-snug">Zero-leakage GroupKFold tree ranking mapped via Isotonic Regression into true posteriors.</p>
+                    <div class="hairline-rule mt-3">
+                        <div class="pillar-hairline-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scroll indicator -->
+            <div class="flex justify-center mt-6">
+                <a href="#section-statement" class="glass-pill px-3 py-1 rounded-full text-[11px] font-mono text-gray-400 hover:text-white flex items-center gap-1.5 transition-colors">
+                    <span>SCROLL TO MORPH</span>
+                    <i class="fa-solid fa-chevron-down text-[9px] animate-bounce"></i>
+                </a>
+            </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SECTION 2: STATEMENT (Particle State: Solar Eclipse / Accretion Corona)
+        ==================================================================== -->
+        <section id="section-statement" class="relative min-h-screen flex items-center justify-center px-6 py-24">
+            <div id="headline-block-3" class="headline-block max-w-4xl mx-auto text-center space-y-8 relative z-20 opacity-0 invisible pointer-events-none transition-all duration-300">
+                
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-cosmos-accent font-mono text-xs tracking-widest uppercase">
+                    <i class="fa-solid fa-circle-notch text-[10px]"></i>
+                    <span>State 02 // Stellar Occultation</span>
+                </div>
+
+                <!-- Kinetic Typography: Word Stagger Reveal -->
+                <h2 class="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-tight">
+                    <span class="statement-word inline-block h-emphasis">One Billion</span>
+                    <span class="statement-word inline-block h-connective">Photons.</span>
+                    <br class="hidden sm:block">
+                    <span class="statement-word inline-block h-emphasis">Sub-Percent</span>
+                    <span class="statement-word inline-block h-connective">Dips.</span>
+                </h2>
+
+                <p class="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto font-light leading-relaxed">
+                    When an exoplanet crosses the disk of its host star, starlight dims by fractions of a percent. COSMOS separates true habitable candidates from stellar flares, instrumental jitter, and eclipsing binaries.
+                </p>
+
+                <!-- Technical Diagnostic Metrics -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto pt-4">
+                    <div class="glass-card p-3 rounded-lg text-center">
+                        <p class="font-mono text-lg font-bold text-cosmos-accent">> 7.1σ</p>
+                        <p class="font-mono text-[10px] text-gray-400 uppercase">Detection SNR</p>
+                    </div>
+                    <div class="glass-card p-3 rounded-lg text-center">
+                        <p class="font-mono text-lg font-bold text-white">100 ppm</p>
+                        <p class="font-mono text-[10px] text-gray-400 uppercase">Transit Depth</p>
+                    </div>
+                    <div class="glass-card p-3 rounded-lg text-center">
+                        <p class="font-mono text-lg font-bold text-emerald-400">98.4%</p>
+                        <p class="font-mono text-[10px] text-gray-400 uppercase">Binary Rejection</p>
+                    </div>
+                    <div class="glass-card p-3 rounded-lg text-center">
+                        <p class="font-mono text-lg font-bold text-indigo-400">17 Quarters</p>
+                        <p class="font-mono text-[10px] text-gray-400 uppercase">Full Coverage</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SECTION 3: PROCESS / TIMELINE (Particle State: Orbital Ring + Wireframe Glyph)
+        ==================================================================== -->
+        <section id="section-process" class="relative min-h-screen flex flex-col justify-center px-6 py-24 max-w-7xl mx-auto">
+            
+            <div class="text-center space-y-3 mb-12">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-mono text-xs tracking-widest uppercase">
+                    <i class="fa-solid fa-ring text-[10px]"></i>
+                    <span>State 03 // Harmonic Orbital Ring</span>
+                </div>
+                <h2 class="text-3xl sm:text-5xl font-bold tracking-tight">
+                    <span class="h-emphasis">Scientific Detection</span> <span class="h-connective">Pipeline</span>
+                </h2>
+                <p class="text-sm text-gray-400 max-w-xl mx-auto">From raw 30-minute Kepler target pixel files to calibrated exoplanet posterior probabilities.</p>
+            </div>
+
+            <!-- Horizontal Progress Rail with Sliding Triangle Marker -->
+            <div class="relative w-full mb-8 px-2">
+                <div class="w-full h-[2px] bg-white/10 relative rounded-full">
+                    <!-- Active Fill Line -->
+                    <div id="processActiveRail" class="absolute top-0 left-0 h-full bg-gradient-to-r from-cosmos-accent via-indigo-400 to-white w-0 transition-all duration-200"></div>
+                    <!-- Sliding Triangle Marker -->
+                    <div id="railTriangleMarker" class="text-cosmos-accent text-xs">
+                        <i class="fa-solid fa-play -rotate-90"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5 Process Step Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <!-- Step 01 -->
+                <div class="process-step-card glass-card rounded-xl p-4 cursor-pointer hover:border-cosmos-accent/40 transition-all step-active">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-mono text-xs font-bold text-cosmos-accent">01</span>
+                        <i class="fa-solid fa-database text-[11px] text-gray-500"></i>
+                    </div>
+                    <h4 class="text-xs font-bold text-white mb-1">Raw Photometry</h4>
+                    <p class="text-[11px] text-gray-400 leading-snug">Quarter-level robust normalization and quality bitmask rejection across 17 quarters.</p>
+                </div>
+
+                <!-- Step 02 -->
+                <div class="process-step-card glass-card rounded-xl p-4 cursor-pointer hover:border-cosmos-accent/40 transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-mono text-xs font-bold text-cosmos-accent">02</span>
+                        <i class="fa-solid fa-filter text-[11px] text-gray-500"></i>
+                    </div>
+                    <h4 class="text-xs font-bold text-white mb-1">Adaptive SavGol</h4>
+                    <p class="text-[11px] text-gray-400 leading-snug">Multi-pass detrending that removes stellar variability without corrupting shallow transit dips.</p>
+                </div>
+
+                <!-- Step 03 -->
+                <div class="process-step-card glass-card rounded-xl p-4 cursor-pointer hover:border-cosmos-accent/40 transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-mono text-xs font-bold text-cosmos-accent">03</span>
+                        <i class="fa-solid fa-magnifying-glass-chart text-[11px] text-gray-500"></i>
+                    </div>
+                    <h4 class="text-xs font-bold text-white mb-1">Harmonic BLS</h4>
+                    <p class="text-[11px] text-gray-400 leading-snug">Coarse-to-fine Box Least Squares grid scanning over 10,000 trial frequencies with NMS.</p>
+                </div>
+
+                <!-- Step 04 -->
+                <div class="process-step-card glass-card rounded-xl p-4 cursor-pointer hover:border-cosmos-accent/40 transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-mono text-xs font-bold text-cosmos-accent">04</span>
+                        <i class="fa-solid fa-shield-virus text-[11px] text-gray-500"></i>
+                    </div>
+                    <h4 class="text-xs font-bold text-white mb-1">Physics Vetting</h4>
+                    <p class="text-[11px] text-gray-400 leading-snug">Odd/even depth consistency, secondary eclipse search at phase 0.5, and centroid shift veto.</p>
+                </div>
+
+                <!-- Step 05 -->
+                <div class="process-step-card glass-card rounded-xl p-4 cursor-pointer hover:border-cosmos-accent/40 transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-mono text-xs font-bold text-cosmos-accent">05</span>
+                        <i class="fa-solid fa-brain text-[11px] text-gray-500"></i>
+                    </div>
+                    <h4 class="text-xs font-bold text-white mb-1">Bayesian Posteriors</h4>
+                    <p class="text-[11px] text-gray-400 leading-snug">LightGBM candidate ranker paired with isotonic regression for true calibrated discovery probabilities.</p>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SECTION 4: CONVERGENCE & CTA (Particle State: Brand Glyph Convergence)
+        ==================================================================== -->
+        <section id="section-convergence" class="relative min-h-screen flex flex-col items-center justify-center px-6 py-24 text-center">
+            
+            <div class="max-w-3xl mx-auto space-y-6 relative z-10">
+                <div class="convergence-elem inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cosmos-accent/10 border border-cosmos-accent/30 text-cosmos-accent font-mono text-xs tracking-widest uppercase">
+                    <i class="fa-solid fa-bolt text-[10px]"></i>
+                    <span>State 04 // 22,000 Particles Converged</span>
+                </div>
+
+                <h2 class="convergence-elem text-4xl sm:text-6xl font-bold tracking-tight">
+                    <span class="h-emphasis">Every Star</span> <span class="h-connective">Has a Story.</span>
+                    <br>
+                    <span class="h-emphasis">Decode</span> <span class="h-connective">the Transit.</span>
+                </h2>
+
+                <p class="convergence-elem text-base text-gray-400 max-w-xl mx-auto font-light">
+                    Join researchers and astrophysicists analyzing Kepler deep-space photometry with automated precision. Request institutional API access or launch the browser console.
+                </p>
+
+                <!-- CONTINUOUS PILL CONTACT MICRO-FORM -->
+                <div class="convergence-elem pt-4 max-w-lg mx-auto w-full">
+                    <form id="contactMicroForm" class="glass-pill rounded-full p-1.5 flex items-center shadow-2xl shadow-blue-500/10 focus-within:border-cosmos-accent/60 transition-all">
+                        <div class="flex-1 px-4">
+                            <input type="text" id="contactName" placeholder="Researcher Name" required class="w-full bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none font-sans">
+                        </div>
+                        <div class="w-[1px] h-6 bg-white/10"></div>
+                        <div class="flex-1 px-4">
+                            <input type="email" id="contactEmail" placeholder="Institution Email" required class="w-full bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none font-sans">
+                        </div>
+                        <button type="submit" class="w-9 h-9 rounded-full bg-gradient-to-r from-cosmos-accent to-blue-600 hover:from-blue-400 hover:to-indigo-500 text-white flex items-center justify-center text-xs shadow-md shadow-cosmos-accentGlow transition-transform hover:scale-105 active:scale-95">
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+
+                    <!-- Feedback Alert Container -->
+                    <div id="formFeedback" class="hidden mt-3 text-center"></div>
+                </div>
+
+                <!-- DIRECT ACTION BUTTONS -->
+                <div class="convergence-elem flex flex-wrap items-center justify-center gap-4 pt-6">
+                    <a href="/dashboard" class="glass-pill px-6 py-3 rounded-full text-xs font-semibold text-white hover:bg-white/10 transition-all flex items-center gap-2 border border-white/15 hover:border-cosmos-accent/40 shadow-lg">
+                        <i class="fa-solid fa-desktop text-cosmos-accent"></i>
+                        <span>Open Kepler Scientific Dashboard</span>
+                    </a>
+                    <a href="/docs" target="_blank" class="text-xs text-gray-400 hover:text-white transition-colors flex items-center gap-1.5">
+                        <i class="fa-solid fa-book-bookmark"></i>
+                        <span>API Documentation & Swagger</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </div><!-- End #scrollWrapper -->
+
+
+    <!-- 5. MINIMALIST FOOTER -->
+    <footer class="relative z-20 border-t border-white/5 bg-[#05070C]/90 backdrop-blur-md px-6 py-8">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+            <div class="flex items-center space-x-3">
+                <div class="w-6 h-6 rounded-full bg-cosmos-accent/20 flex items-center justify-center text-cosmos-accent text-[11px]">
+                    <i class="fa-solid fa-satellite"></i>
+                </div>
+                <span class="text-gray-300 font-semibold tracking-wider">COSMOS</span>
+                <span>— Exoplanet Detection System v1.0</span>
+            </div>
+
+            <div class="flex items-center space-x-6 text-gray-400">
+                <a href="#section-hero" class="hover:text-white transition-colors">Overview</a>
+                <a href="#section-statement" class="hover:text-white transition-colors">Physics</a>
+                <a href="#section-process" class="hover:text-white transition-colors">Pipeline</a>
+                <a href="/dashboard" class="hover:text-cosmos-accent transition-colors">Console</a>
+                <a href="https://archive.stsci.edu/kepler/" target="_blank" class="hover:text-white transition-colors">NASA MAST</a>
+            </div>
+
+            <div class="font-mono text-[11px] text-gray-600">
+                NASA Kepler Archive // Calibrated GroupKFold
+            </div>
+        </div>
+    </footer>
+
+    <!-- Custom Particle Engine & Choreography Scripts -->
+    <script src="/static/particleEngine.js"></script>
+    <script src="/static/landing.js"></script>
+</body>
+</html>

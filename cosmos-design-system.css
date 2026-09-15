@@ -1,0 +1,417 @@
+/* ==========================================================================
+   COSMOS Professional Research-Grade Design System
+   Source of Truth: Observatory Telemetry & Astronomical Instrument Standard
+   ========================================================================== */
+
+:root {
+    /* 11 Research Design Tokens */
+    --bg-void: #0B0C10;             /* Base background */
+    --bg-panel: #15171D;            /* Panel surface (flat, no gradient) */
+    --bg-panel-raised: #1C1F27;     /* Hover / active panel state */
+    --line-hairline: #262A33;       /* All borders — 1px hairlines, never drop shadow */
+    --text-primary: #EDEDEE;        /* Headlines, primary values */
+    --text-secondary: #8B8F99;      /* Supporting text, descriptions */
+    --text-tertiary: #5A5E68;       /* Timestamps, disabled, footnotes */
+    --accent-signal: #E8A33D;       /* ONE warm accent — stellar blackbody glow. Used ONLY for primary CTA & transit dip */
+    --data-line: #6FA8DC;           /* Chart lines, data readouts — cool blue standard in astronomy plotting */
+    --status-ok: #5FB98C;           /* Muted, desaturated real status */
+    --status-alert: #C77B4A;        /* Real alerts/anomalies only */
+
+    /* Typography Specifications */
+    --font-serif: 'Newsreader', Georgia, serif;
+    --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+
+    /* Geometry & Spacing */
+    --radius-sm: 2px;
+    --radius-md: 4px;
+    --radius-lg: 6px;
+}
+
+/* Base Document Setup */
+html, body {
+    background-color: var(--bg-void);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography Hierarchy */
+.font-headline {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+}
+
+.font-ui {
+    font-family: var(--font-sans);
+}
+
+.font-telemetry {
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+/* Research Instrument Panels (Strictly Flat, 1px Hairline Borders) */
+.research-panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--line-hairline);
+    border-radius: var(--radius-md);
+}
+
+.research-panel-raised {
+    background: var(--bg-panel-raised);
+    border: 1px solid var(--line-hairline);
+    border-radius: var(--radius-md);
+}
+
+/* Backward-compatible utility classes mapped directly to flat research surfaces */
+.cosmos-panel,
+.glass-panel,
+.glass-card,
+.bento-card,
+.bento-hero {
+    background: var(--bg-panel) !important;
+    border: 1px solid var(--line-hairline) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: none !important;
+    transition: border-color 0.15s ease, background-color 0.15s ease !important;
+}
+
+.cosmos-panel:hover,
+.glass-card:hover,
+.bento-card:hover {
+    background: var(--bg-panel-raised) !important;
+    border-color: #363B47 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* Primary Signal Action Button (Only element wearing accent-signal as primary fill) */
+.btn-signal {
+    background-color: var(--accent-signal);
+    color: #0B0C10;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--accent-signal);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.btn-signal:hover {
+    opacity: 0.92;
+}
+
+.btn-signal:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Secondary Hairline Button */
+.btn-hairline {
+    background-color: transparent;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.875rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line-hairline);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-hairline:hover {
+    background-color: var(--bg-panel-raised);
+    border-color: #363B47;
+}
+
+/* Compatibility override for cosmos-btn-gradient -> mapped to clean signal action */
+.cosmos-btn-gradient {
+    background: var(--accent-signal) !important;
+    color: #0B0C10 !important;
+    border: 1px solid var(--accent-signal) !important;
+    box-shadow: none !important;
+    border-radius: var(--radius-sm) !important;
+    font-weight: 600 !important;
+    transform: none !important;
+}
+
+.cosmos-btn-gradient:hover {
+    opacity: 0.92 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* Compatibility override for glass-pill / cosmos-pill */
+.glass-pill,
+.cosmos-pill {
+    background: transparent !important;
+    border: 1px solid var(--line-hairline) !important;
+    color: var(--text-secondary) !important;
+    border-radius: var(--radius-sm) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
+}
+
+.glass-pill:hover,
+.cosmos-pill:hover {
+    background: var(--bg-panel-raised) !important;
+    color: var(--text-primary) !important;
+    border-color: #363B47 !important;
+    box-shadow: none !important;
+}
+
+/* Research Sidebar Navigation */
+#appSidebar {
+    background: var(--bg-void);
+    border-right: 1px solid var(--line-hairline);
+    transition: width 0.2s ease;
+}
+
+.sidebar-item {
+    position: relative;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    border: 1px solid transparent;
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-item:hover {
+    background: var(--bg-panel);
+    color: var(--text-primary);
+}
+
+.sidebar-item i {
+    color: var(--text-tertiary);
+    transition: color 0.15s ease;
+}
+
+.sidebar-item:hover i {
+    color: var(--text-secondary);
+}
+
+/* Active Nav Item: Single left hairline tick in accent-signal + subtle bg-panel-raised */
+.sidebar-item-active {
+    color: var(--text-primary) !important;
+    background: var(--bg-panel-raised) !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.sidebar-item-active i {
+    color: var(--text-primary) !important;
+    filter: none !important;
+}
+
+.sidebar-item-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20%;
+    height: 60%;
+    width: 2px;
+    background: var(--accent-signal);
+    border-radius: 0;
+    box-shadow: none !important;
+}
+
+.sidebar-collapsed {
+    width: 64px !important;
+}
+
+.sidebar-collapsed .sidebar-label,
+.sidebar-collapsed .sidebar-section-title,
+.sidebar-collapsed .sidebar-badge {
+    display: none !important;
+}
+
+/* Telemetry Numeric Readout Styling */
+.metric-value {
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum" 1;
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--text-primary);
+    text-align: right;
+}
+
+.metric-caption {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.metric-methodology {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    color: var(--text-tertiary);
+    line-height: 1.4;
+}
+
+/* Status Indicators (Factual, Un-glowing) */
+.status-indicator-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.status-indicator-dot.ok {
+    background-color: var(--status-ok);
+}
+
+.status-indicator-dot.alert {
+    background-color: var(--status-alert);
+}
+
+.status-indicator-dot.muted {
+    background-color: var(--text-tertiary);
+}
+
+/* Quiet Telemetry Status Strip */
+.telemetry-status-strip {
+    background: var(--bg-panel);
+    border: 1px solid var(--line-hairline);
+    padding: 0.5rem 0.875rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Quiet Vetting & Validation Status Badges */
+.badge-ok {
+    background: rgba(95, 185, 140, 0.12);
+    color: var(--status-ok);
+    border: 1px solid rgba(95, 185, 140, 0.28);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+}
+
+.badge-alert {
+    background: rgba(199, 123, 74, 0.12);
+    color: var(--status-alert);
+    border: 1px solid rgba(199, 123, 74, 0.28);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+}
+
+.badge-unverified {
+    background: var(--bg-panel-raised);
+    color: var(--text-tertiary);
+    border: 1px solid var(--line-hairline);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+}
+
+/* Plain Instrument Tables */
+.research-table {
+    width: 100%;
+    text-align: left;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+}
+
+.research-table th {
+    padding: 0.625rem 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--line-hairline);
+    text-transform: none;
+}
+
+.research-table td {
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid var(--line-hairline);
+    color: var(--text-primary);
+}
+
+.research-table tr:hover td {
+    background: var(--bg-panel-raised);
+}
+
+/* Custom Minimalist Scrollbar */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-void);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--line-hairline);
+    border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #363B47;
+}
+
+/* Motion: Single Deliberate Draw-in Animation on Initial Load for Chart Only */
+@keyframes chartTraceIn {
+    from {
+        opacity: 0;
+        stroke-dashoffset: 1000;
+    }
+    to {
+        opacity: 1;
+        stroke-dashoffset: 0;
+    }
+}
+
+.animate-chart-trace {
+    animation: chartTraceIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Respect Reduced Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cosmos-exoplanet-detector"
+version = "1.0.0"
+description = "AI-Based Detection of Earth-Like Exoplanets in Kepler Data"
+authors = [{ name = "COSMOS Team" }]
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.0.0",
+    "scipy>=1.10.0",
+    "pandas>=2.0.0",
+    "pyarrow>=15.0.0",
+    "astropy>=6.0.0",
+    "scikit-learn>=1.4.0",
+    "lightgbm>=4.0.0",
+    "matplotlib>=3.8.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "pydantic>=2.0.0",
+    "python-multipart>=0.0.9"
+]
+
+[project.scripts]
+cosmos = "app.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+pythonpath = ["."]

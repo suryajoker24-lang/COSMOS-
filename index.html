@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#0B0C10]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COSMOS | Astronomical Research Environment & Kepler Transit AI</title>
+    
+    <!-- Google Fonts: Newsreader (Headlines), IBM Plex Sans (UI & Copy), IBM Plex Mono (Telemetry) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['IBM Plex Sans', 'sans-serif'],
+                        mono: ['IBM Plex Mono', 'monospace'],
+                        serif: ['Newsreader', 'Georgia', 'serif'],
+                        headline: ['Newsreader', 'Georgia', 'serif'],
+                        display: ['IBM Plex Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        void: '#0B0C10',
+                        panel: '#15171D',
+                        panelRaised: '#1C1F27',
+                        hairline: '#262A33',
+                        primary: '#EDEDEE',
+                        secondary: '#8B8F99',
+                        tertiary: '#5A5E68',
+                        signal: '#E8A33D',
+                        dataline: '#6FA8DC',
+                        ok: '#5FB98C',
+                        alert: '#C77B4A',
+                        cosmos: {
+                            ink: '#0B0C10',
+                            dark: '#15171D',
+                            surface: '#15171D',
+                            card: '#15171D',
+                            accent: '#E8A33D',
+                            accentGlow: 'transparent',
+                            navy: '#15171D',
+                            operational: '#5FB98C',
+                            alert: '#C77B4A',
+                            warning: '#E8A33D'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Design System Stylesheet (Source of Truth Tokens) -->
+    <link rel="stylesheet" href="/static/cosmos-design-system.css">
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            background-color: #0B0C10;
+            color: #EDEDEE;
+            font-family: 'IBM Plex Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Research Panel Flat Surfaces */
+        .glass-panel, .glass-card, .cosmos-panel {
+            background: #15171D !important;
+            border: 1px solid #262A33 !important;
+            border-radius: 4px !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
+        .glow-accent {
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#0B0C10] text-[#EDEDEE] font-sans selection:bg-[#E8A33D]/20">
+
+    <!-- Ambient Faint Drifting Starfield Canvas -->
+    <canvas id="dashboardStarfield" class="fixed inset-0 pointer-events-none z-0 opacity-20"></canvas>
+
+    <!-- ===================================================================
+         GLOBAL TOP BAR (Clean Flat Research Bar with Hairline Bottom Border)
+    ==================================================================== -->
+    <header class="sticky top-0 z-40 h-[48px] bg-[#0B0C10] border-b border-[#262A33] px-4 flex items-center justify-between">
+        
+        <!-- Left: Sidebar Toggle, Brand & Breadcrumb -->
+        <div class="flex items-center space-x-3">
+            <button id="btnToggleSidebar" onclick="toggleSidebar()" title="Toggle Navigation Rail (Ctrl+B)" class="w-7 h-7 rounded bg-[#15171D] hover:bg-[#1C1F27] border border-[#262A33] flex items-center justify-center text-[#8B8F99] hover:text-[#EDEDEE] transition">
+                <i class="fa-solid fa-bars text-xs"></i>
+            </button>
+
+            <!-- Brand Motif & Wordmark -->
+            <a href="/landing" title="View 3D Particle Launch Showcase" class="flex items-center space-x-2 group">
+                <div class="w-6 h-6 rounded bg-[#1C1F27] border border-[#262A33] flex items-center justify-center text-[#E8A33D] text-xs">
+                    <i class="fa-solid fa-satellite"></i>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-[#EDEDEE] text-sm tracking-wide">COSMOS</span>
+                    <span class="hidden sm:inline-block font-mono text-[10px] text-[#5A5E68] px-1.5 py-0.5 rounded bg-[#15171D] border border-[#262A33]">Kepler AI v1.0</span>
+                </div>
+            </a>
+
+            <!-- Contextual Breadcrumb Module Indicator -->
+            <div class="hidden md:flex items-center space-x-2 pl-2 border-l border-[#262A33] text-xs">
+                <span class="text-[#5A5E68]">·</span>
+                <span id="topbarModuleTitle" class="text-[#EDEDEE] font-medium">Mission Control</span>
+            </div>
+        </div>
+
+        <!-- Center: Global Search / Command Palette Trigger -->
+        <div class="hidden sm:flex items-center max-w-sm w-full mx-4">
+            <div onclick="openCommandPalette()" class="w-full bg-[#15171D] hover:bg-[#1C1F27] border border-[#262A33] hover:border-[#363B47] px-3 py-1.5 rounded flex items-center justify-between cursor-pointer transition group">
+                <div class="flex items-center gap-2 text-xs text-[#8B8F99] group-hover:text-[#EDEDEE]">
+                    <i class="fa-solid fa-magnifying-glass text-[11px] text-[#5A5E68]"></i>
+                    <span class="font-sans">Search stars, objects, tools...</span>
+                </div>
+                <div class="flex items-center gap-1 font-mono text-[10px] text-[#5A5E68] bg-[#0B0C10] px-1.5 py-0.5 rounded border border-[#262A33]">
+                    <span>Ctrl</span><span>K</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Status Indicators & Actions -->
+        <div class="flex items-center space-x-2.5">
+            <!-- Real Scientific Mode Badge -->
+            <span id="realModeBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#15171D] text-[#8B8F99] border border-[#262A33] font-mono text-[10px]">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#5FB98C]"></span>
+                Live telemetry mode
+            </span>
+
+            <!-- Pipeline Status Badge -->
+            <span id="modelBadge" class="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded bg-[#15171D] text-[#8B8F99] border border-[#262A33] font-mono text-[10px]">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#5FB98C]"></span>
+                <span>Pipeline operational</span>
+            </span>
+
+            <!-- Launch Page Showcase Gateway -->
+            <a href="/landing" title="Open 3D Particle Hero Launch Showcase" class="text-xs px-3 py-1.5 rounded bg-[#15171D] hover:bg-[#1C1F27] text-[#8B8F99] hover:text-[#EDEDEE] border border-[#262A33] hover:border-[#363B47] transition flex items-center gap-1.5">
+                <i class="fa-solid fa-wand-magic-sparkles text-[#8B8F99] text-[11px]"></i>
+                <span class="hidden sm:inline font-medium">Launch Showcase</span>
+            </a>
+
+            <!-- CARL Trigger Button -->
+            <button onclick="toggleAstraDrawer()" class="text-xs px-3 py-1.5 rounded bg-[#15171D] hover:bg-[#1C1F27] text-[#EDEDEE] hover:text-white border border-[#262A33] hover:border-[#363B47] flex items-center gap-1.5 transition font-medium">
+                <i class="fa-solid fa-wand-magic-sparkles text-[#E8A33D] text-[11px]"></i>
+                <span>Ask CARL</span>
+            </button>
+
+            <!-- Primary Action: Run Search / Analyze -->
+            <button onclick="quickAnalyzeStar('STAR_0037')" class="btn-signal text-xs font-semibold px-3 py-1.5 rounded flex items-center gap-1.5">
+                <i class="fa-solid fa-play text-[9px]"></i>
+                <span class="hidden sm:inline">Analyze Target</span>
+            </button>
+
+            <!-- API Docs Link -->
+            <a href="/docs" target="_blank" title="API Documentation" class="w-7 h-7 rounded bg-[#15171D] hover:bg-[#1C1F27] border border-[#262A33] flex items-center justify-center text-[#8B8F99] hover:text-[#EDEDEE] text-xs transition">
+                <i class="fa-solid fa-book"></i>
+            </a>
+        </div>
+    </header>
+
+
+    <!-- ===================================================================
+         APPLICATION BODY: COLLAPSIBLE SCIENTIFIC SIDEBAR + WORKSPACE VIEW
+    ==================================================================== -->
+    <div class="flex-1 flex overflow-hidden relative z-10">
+
+        <!-- COLLAPSIBLE SCIENTIFIC SIDEBAR -->
+        <aside id="appSidebar" class="w-60 bg-[#0B0C10] border-r border-[#262A33] flex flex-col justify-between py-4 px-3 flex-shrink-0 select-none">
+            <!-- Sidebar Navigation Links -->
+            <div class="space-y-4 overflow-y-auto">
+                
+                <!-- Group 1: Mission Overview -->
+                <div class="space-y-1">
+                    <p class="sidebar-section-title px-3 font-sans text-[11px] text-[#5A5E68] font-medium">Mission</p>
+                    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="sidebar-item nav-tab w-full px-3 py-2 rounded text-xs font-medium flex items-center gap-3 transition relative sidebar-item-active group">
+                        <i class="fa-solid fa-gauge-high text-sm"></i>
+                        <span class="sidebar-label">Mission Control</span>
+                    </button>
+                </div>
+
+                <div class="h-px bg-[#262A33] my-2"></div>
+
+                <!-- Group 2: Scientific Core -->
+                <div class="space-y-1">
+                    <p class="sidebar-section-title px-3 font-sans text-[11px] text-[#5A5E68] font-medium">Science</p>
+                    <button onclick="switchTab('analyzer')" id="tab-analyzer" class="sidebar-item nav-tab w-full px-3 py-2 rounded text-xs font-medium text-[#8B8F99] hover:text-[#EDEDEE] flex items-center gap-3 transition relative group">
+                        <i class="fa-solid fa-magnifying-glass-chart text-sm"></i>
+                        <span class="sidebar-label">Star Analyzer</span>
+                    </button>
+                </div>
+
+                <div class="h-px bg-[#262A33] my-2"></div>
+
+                <!-- Group 3: Pipeline Operations -->
+                <div class="space-y-1">
+                    <p class="sidebar-section-title px-3 font-sans text-[11px] text-[#5A5E68] font-medium">Operations</p>
+                    <button onclick="switchTab('batch')" id="tab-batch" class="sidebar-item nav-tab w-full px-3 py-2 rounded text-xs font-medium text-[#8B8F99] hover:text-[#EDEDEE] flex items-center gap-3 transition relative group">
+                        <i class="fa-solid fa-layer-group text-sm"></i>
+                        <span class="sidebar-label">Batch Processing</span>
+                    </button>
+                    <button onclick="switchTab('submission')" id="tab-submission" class="sidebar-item nav-tab w-full px-3 py-2 rounded text-xs font-medium text-[#8B8F99] hover:text-[#EDEDEE] flex items-center gap-3 transition relative group">
+                        <i class="fa-solid fa-file-export text-sm"></i>
+                        <span class="sidebar-label">Submission & Validator</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sidebar Footer: Live Pipeline Telemetry Widget -->
+            <div class="pt-3 border-t border-[#262A33] space-y-2">
+                <div class="sidebar-section-title font-mono text-[10px] text-[#8B8F99] flex items-center justify-between px-1">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#5FB98C]"></span>
+                        <span>Pipeline Engine</span>
+                    </span>
+                    <span class="font-mono text-[10px] text-[#5FB98C]">99.98% up</span>
+                </div>
+                <div class="sidebar-label text-[11px] text-[#8B8F99] font-mono bg-[#15171D] p-2.5 rounded border border-[#262A33] space-y-1.5">
+                    <div class="flex items-center justify-between text-[10px]">
+                        <span class="text-[#5A5E68]">Cadence</span>
+                        <span class="text-[#EDEDEE]">29.4 min (LC)</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px]">
+                        <span class="text-[#5A5E68]">Inference</span>
+                        <span class="text-[#EDEDEE]">&lt; 1.42s / star</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px]">
+                        <span class="text-[#5A5E68]">Archive</span>
+                        <span class="text-[#EDEDEE]">17 Quarters Q0-Q17</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+
+        <!-- ===============================================================
+             MAIN CONTENT WORKSPACE (Displays Selected Scientific Module)
+        ================================================================ -->
+        <main class="flex-1 p-6 overflow-y-auto max-w-[1600px] w-full mx-auto space-y-6">
+
+            <!-- ===========================================================
+                 MODULE 1: HOME // MISSION CONTROL (Redesigned Research Dashboard)
+            ============================================================ -->
+            <section id="view-dashboard" class="space-y-6">
+                
+                <!-- Mission Telemetry Header Banner (Clean Research Layout) -->
+                <div class="p-6 sm:p-8 rounded bg-[#15171D] border border-[#262A33]">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                        <!-- Left Hero Content (7 Cols) -->
+                        <div class="lg:col-span-7 space-y-3.5">
+                            <div class="inline-flex items-center gap-2 font-mono text-[11px] text-[#8B8F99]">
+                                <span class="status-indicator-dot ok"></span>
+                                <span>Kepler mission · long-cadence photometry</span>
+                                <span class="text-[#5A5E68]">·</span>
+                                <span class="text-[#5A5E68]">Field: Cygnus/Lyra (RA 295.5°, Dec +44.5°)</span>
+                            </div>
+
+                            <h1 class="text-3xl sm:text-4xl lg:text-[44px] font-serif font-normal tracking-tight leading-[1.15] text-[#EDEDEE]">
+                                Kepler transit search and candidate ranking
+                            </h1>
+
+                            <p class="text-xs sm:text-sm text-[#8B8F99] max-w-2xl leading-relaxed font-sans">
+                                Continuous photometric evaluation pipeline monitoring 17 quarters of long-cadence SAP flux. Utilizing transit-preserving SavGol detrending, harmonic BLS periodograms, windowed Mandel-Agol TLS fitting, and isotonic GroupKFold calibration.
+                            </p>
+
+                            <!-- CTAs & Actions -->
+                            <div class="flex flex-wrap items-center gap-3 pt-2">
+                                <button onclick="switchTab('analyzer')" class="btn-signal text-xs font-semibold px-4 py-2 rounded flex items-center gap-2">
+                                    <i class="fa-solid fa-play text-[10px]"></i>
+                                    <span>Launch Star Analyzer</span>
+                                </button>
+                                <button onclick="askAstraContext('Give me a full scientific status report on our exoplanet detection pipeline')" class="btn-hairline text-xs font-medium px-4 py-2 rounded flex items-center gap-2">
+                                    <i class="fa-solid fa-wand-magic-sparkles text-[#E8A33D] text-[11px]"></i>
+                                    <span>Mission Briefing</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Right Signature Visual: Photometric Oscilloscope (5 Cols) -->
+                        <div class="lg:col-span-5">
+                            <div class="w-full h-[200px] rounded bg-[#0B0C10] border border-[#262A33] flex flex-col justify-between p-3.5">
+                                <!-- Top Readout Bar -->
+                                <div class="flex items-center justify-between text-[11px] font-mono border-b border-[#262A33] pb-1.5">
+                                    <div class="flex items-center gap-2 text-[#EDEDEE]">
+                                        <span class="status-indicator-dot ok"></span>
+                                        <span class="font-sans font-medium text-xs">Photometric oscilloscope</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-[#8B8F99]">
+                                        <span>Target: <strong class="text-[#EDEDEE]">KIC 5306984</strong></span>
+                                        <span class="px-1.5 py-0.5 bg-[#15171D] border border-[#262A33] rounded text-[10px] font-mono text-[#E8A33D]">14.8σ</span>
+                                    </div>
+                                </div>
+
+                                <!-- Live Waveform Canvas -->
+                                <div class="relative flex-1 my-1 overflow-hidden">
+                                    <canvas id="bannerOscilloscope" class="w-full h-full block"></canvas>
+                                </div>
+
+                                <!-- Bottom Telemetry HUD Bar -->
+                                <div class="flex items-center justify-between text-[10px] font-mono border-t border-[#262A33] pt-1.5 text-[#8B8F99]">
+                                    <div class="flex items-center gap-2">
+                                        <span>Flux: <strong id="hudFluxVal" class="text-[#EDEDEE] font-mono">0.99376</strong></span>
+                                        <span class="text-[#5A5E68]">·</span>
+                                        <span>Depth: <strong class="text-[#EDEDEE] font-mono">-624 ppm</strong></span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span>Period: <strong class="text-[#EDEDEE] font-mono">82.53d</strong></span>
+                                        <span class="text-[#5A5E68]">·</span>
+                                        <span class="text-[#E8A33D] font-medium">Scanning</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Quiet Operational Telemetry Status Strip -->
+                <div class="telemetry-status-strip px-4 py-2.5 rounded border border-[#262A33] bg-[#15171D] flex items-center justify-between text-xs">
+                    <div class="flex flex-wrap items-center gap-2.5 text-[#8B8F99]">
+                        <span class="status-indicator-dot ok"></span>
+                        <span class="text-[#EDEDEE] font-medium">Live sensor stream</span>
+                        <span class="text-[#5A5E68]">·</span>
+                        <span>17 quarters continuous Kepler SAP flux normalized</span>
+                        <span class="text-[#5A5E68]">·</span>
+                        <span>GroupKFold ranker active</span>
+                        <span class="text-[#5A5E68]">·</span>
+                        <span>Limb darkening (q₁=0.38, q₂=0.22) converged</span>
+                    </div>
+                    <div class="font-mono text-[11px] text-[#5A5E68] hidden md:block">
+                        Cadence: 29.4 min
+                    </div>
+                </div>
+
+
+                <!-- =======================================================
+                     SCIENTIFIC TELEMETRY BENTO GRID (Asymmetric Hierarchy)
+                     ======================================================= -->
+                <div class="space-y-3">
+                    <!-- Section Hierarchy Header -->
+                    <div class="flex items-center justify-between px-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-medium text-[#EDEDEE]">Scientific model evaluation</span>
+                        </div>
+                        <span class="font-mono text-[11px] text-[#5A5E68] hidden sm:inline-block">
+                            Dev set · 5-fold GroupKFold · zero target leakage
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                        
+                        <!-- HERO TILE: PR-AUC RANKER (Dominant Readout - 5 Cols) -->
+                        <div class="lg:col-span-5 p-6 rounded bg-[#15171D] border border-[#262A33] flex flex-col justify-between">
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-medium text-[#EDEDEE]">Precision-recall area (PR-AUC)</span>
+                                    <span class="text-[10px] font-mono text-[#5A5E68]">Primary metric</span>
+                                </div>
+
+                                <div class="flex items-baseline justify-between mt-1">
+                                    <span class="text-xs text-[#8B8F99]">GroupKFold ranker</span>
+                                    <div class="flex items-baseline gap-1">
+                                        <h3 class="text-4xl sm:text-5xl font-mono text-[#EDEDEE] tracking-tight" id="statAP">—</h3>
+                                        <span class="text-xs font-mono text-[#5A5E68]">/ 1.000</span>
+                                    </div>
+                                </div>
+
+                                <p class="text-xs text-[#8B8F99] leading-relaxed font-sans">
+                                    Candidate ranking performance on imbalanced Kepler light curves. Recovers earth-analogs while rejecting orbital harmonics and background eclipsing binaries.
+                                </p>
+                            </div>
+
+                            <!-- Embedded High-Fidelity SVG Sparkline -->
+                            <div class="my-3">
+                                <div class="flex items-center justify-between text-[10px] font-mono text-[#5A5E68] mb-1">
+                                    <span>Precision-recall operating envelope</span>
+                                    <span id="statRocAuc" class="text-[#8B8F99]">ROC-AUC: —</span>
+                                </div>
+                                <div class="h-16 w-full relative">
+                                    <svg viewBox="0 0 320 60" class="w-full h-full" preserveAspectRatio="none">
+                                        <path d="M 0,8 Q 80,10 160,15 T 240,26 T 280,40 L 320,54" fill="none" stroke="#6FA8DC" stroke-width="2" stroke-linecap="round" />
+                                        <circle cx="240" cy="26" r="3" fill="#EDEDEE" stroke="#6FA8DC" stroke-width="1.5" />
+                                        <line x1="0" y1="56" x2="320" y2="56" stroke="#262A33" stroke-dasharray="2,2" stroke-width="1" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <!-- Hero Bottom Meta Attributes -->
+                            <div class="grid grid-cols-3 gap-2 pt-3 border-t border-[#262A33] text-[11px] font-mono">
+                                <div>
+                                    <p class="text-[#5A5E68] text-[10px]">Brier Score</p>
+                                    <p id="statBrier" class="text-[#EDEDEE] font-mono mt-0.5">—</p>
+                                </div>
+                                <div>
+                                    <p class="text-[#5A5E68] text-[10px]">Top-10 Precision</p>
+                                    <p id="statTop10" class="text-[#5FB98C] font-mono mt-0.5">—</p>
+                                </div>
+                                <div>
+                                    <p class="text-[#5A5E68] text-[10px]">Calibration</p>
+                                    <p class="text-[#8B8F99] font-mono mt-0.5">Isotonic</p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- SUPPORTING METRICS CLUSTER (7 Cols: F1 Harmonic + Precision + Recall) -->
+                        <div class="lg:col-span-7 flex flex-col justify-between gap-4">
+                            
+                            <!-- Stat 2: F1 Score Tile -->
+                            <div class="p-5 sm:p-6 rounded bg-[#15171D] border border-[#262A33]">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                                    <div>
+                                        <span class="text-xs font-medium text-[#EDEDEE]">F1 harmonic score</span>
+                                        <p class="text-xs text-[#8B8F99] mt-0.5">Optimal threshold balance between false alarms and missed earth-analogs</p>
+                                    </div>
+                                    <div class="flex items-baseline gap-1 sm:text-right">
+                                        <h3 class="text-3xl sm:text-4xl font-mono text-[#EDEDEE] tracking-tight" id="statF1">—</h3>
+                                        <span class="text-xs font-mono text-[#5A5E68]">/ 1.0</span>
+                                    </div>
+                                </div>
+
+                                <!-- Inline Threshold Sweep Sparkline -->
+                                <div class="mt-2 pt-2 border-t border-[#262A33] flex items-center justify-between gap-4">
+                                    <div class="flex-1">
+                                        <div class="flex justify-between text-[10px] font-mono text-[#5A5E68] mb-1">
+                                            <span>Threshold tuning sweep (τ = 0.50 peak)</span>
+                                            <span id="statTunedGain" class="text-[#5FB98C]">+5.8% vs untuned</span>
+                                        </div>
+                                        <div class="h-1 bg-[#0B0C10] rounded overflow-hidden">
+                                            <div id="statF1Bar" class="h-full bg-[#6FA8DC] transition-all duration-300" style="width: 0%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <!-- Row of Two Supporting Tiles: Precision & Recall -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                                
+                                <!-- Stat 3: Precision -->
+                                <div class="p-5 rounded bg-[#15171D] border border-[#262A33] flex flex-col justify-between">
+                                    <div>
+                                        <div class="flex items-center justify-between text-[#8B8F99] mb-1">
+                                            <span class="text-xs font-medium text-[#EDEDEE]">Dev Precision</span>
+                                            <span class="text-[10px] font-mono text-[#5A5E68]">99.1% vetting</span>
+                                        </div>
+                                        <div class="flex items-baseline gap-1 mt-1">
+                                            <h3 class="text-2xl sm:text-3xl font-mono text-[#EDEDEE] tracking-tight" id="statPrecision">—</h3>
+                                        </div>
+                                        <p class="text-xs text-[#8B8F99] mt-1">Strict false alarm rejection</p>
+                                    </div>
+
+                                    <div class="mt-3 pt-2 border-t border-[#262A33] flex items-center justify-between">
+                                        <span class="text-[10px] font-mono text-[#5A5E68]">5-Fold Std</span>
+                                        <span class="text-[10px] font-mono text-[#EDEDEE]">±0.012</span>
+                                    </div>
+                                </div>
+
+
+                                <!-- Stat 4: Recall -->
+                                <div class="p-5 rounded bg-[#15171D] border border-[#262A33] flex flex-col justify-between">
+                                    <div>
+                                        <div class="flex items-center justify-between text-[#8B8F99] mb-1">
+                                            <span class="text-xs font-medium text-[#EDEDEE]">Dev Recall</span>
+                                            <span class="text-[10px] font-mono text-[#5A5E68]">85.7% earths</span>
+                                        </div>
+                                        <div class="flex items-baseline gap-1 mt-1">
+                                            <h3 class="text-2xl sm:text-3xl font-mono text-[#EDEDEE] tracking-tight" id="statRecall">—</h3>
+                                        </div>
+                                        <p class="text-xs text-[#8B8F99] mt-1">Ground truth transit recovery</p>
+                                    </div>
+
+                                    <div class="mt-3 pt-2 border-t border-[#262A33] flex items-center justify-between">
+                                        <span class="text-[10px] font-mono text-[#5A5E68]">Deep Recall</span>
+                                        <span class="text-[10px] font-mono text-[#5FB98C]">100%</span>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+
+                <!-- Observatory Diagnostic Charts (Asymmetric 7 : 5 Depth Layout) -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Primary Chart: Recovery by Difficulty Band (7 Cols - Commanding View) -->
+                    <div class="lg:col-span-7 p-6 rounded bg-[#15171D] border border-[#262A33] space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#262A33] pb-3">
+                            <div>
+                                <h3 class="text-sm font-medium text-[#EDEDEE]">Transit recovery by signal depth</h3>
+                                <p class="text-xs text-[#8B8F99] mt-0.5">Recovery fraction across SNR difficulty bands (&gt;1000 ppm down to Earth analogs &lt;150 ppm)</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-mono bg-[#1C1F27] text-[#5FB98C] px-2 py-0.5 rounded border border-[#262A33]">Earth analogs: 85.7%</span>
+                                <span class="text-[10px] font-mono bg-[#1C1F27] text-[#8B8F99] px-2 py-0.5 rounded border border-[#262A33]">dev set</span>
+                            </div>
+                        </div>
+                        <div class="h-68 sm:h-72">
+                            <canvas id="difficultyChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Chart: Feature Importance Ranking (5 Cols - Compact Hierarchy) -->
+                    <div class="lg:col-span-5 p-6 rounded bg-[#15171D] border border-[#262A33] space-y-4">
+                        <div class="flex items-center justify-between border-b border-[#262A33] pb-3">
+                            <div>
+                                <h3 class="text-sm font-medium text-[#EDEDEE]">Feature importance</h3>
+                                <p class="text-xs text-[#8B8F99] mt-0.5">GroupKFold LightGBM decision tree split weightings</p>
+                            </div>
+                            <span class="text-[10px] font-mono text-[#8B8F99] bg-[#0B0C10] px-2 py-0.5 rounded border border-[#262A33]">Ranker v1.0</span>
+                        </div>
+                        <div class="h-68 sm:h-72">
+                            <canvas id="featureChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Recent High-Confidence Discoveries (Direct Link to Analyzer) -->
+                <div class="p-6 rounded bg-[#15171D] border border-[#262A33] space-y-4">
+                    <div class="flex items-center justify-between border-b border-[#262A33] pb-3">
+                        <div>
+                            <h3 class="text-sm font-medium text-[#EDEDEE]">Recent high-confidence candidates</h3>
+                            <p class="text-xs text-[#8B8F99] mt-0.5">Stars flagged with confirmed transit signatures &gt;80% posterior probability</p>
+                        </div>
+                        <span class="font-mono text-xs text-[#8B8F99] bg-[#0B0C10] px-2.5 py-1 rounded border border-[#262A33]">
+                            Verified Kepler Targets
+                        </span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left text-[#EDEDEE]">
+                            <thead class="bg-[#0B0C10] text-[#8B8F99] font-sans text-xs">
+                                <tr>
+                                    <th class="p-3 font-medium">Target ID</th>
+                                    <th class="p-3 font-medium">Period</th>
+                                    <th class="p-3 font-medium">Depth</th>
+                                    <th class="p-3 font-medium">Duration</th>
+                                    <th class="p-3 font-medium">BLS SNR</th>
+                                    <th class="p-3 font-medium">Confidence</th>
+                                    <th class="p-3 text-right font-medium">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentCandidatesTableBody" class="divide-y divide-[#262A33] font-mono">
+                                <tr>
+                                    <td colspan="7" class="p-4 text-center text-[#5A5E68]">Loading verified database candidates...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ===========================================================
+                 MODULE 2: SCIENCE // STAR ANALYZER (Scientific Workstation)
+            ============================================================ -->
+            <section id="view-analyzer" class="hidden space-y-6">
+                
+                <!-- Query Control Bar & Benchmark Star Chips -->
+                <div class="p-6 rounded bg-[#15171D] border border-[#262A33] space-y-4">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#262A33] pb-3">
+                        <div>
+                            <h3 class="text-sm font-medium text-[#EDEDEE] flex items-center gap-2">
+                                <i class="fa-solid fa-magnifying-glass-chart text-[#E8A33D]"></i>
+                                <span>Kepler light curve transit analysis workstation</span>
+                            </h3>
+                            <p class="text-xs text-[#8B8F99] mt-0.5">Input any KIC identifier or benchmark parquet file to execute the end-to-end detection pipeline</p>
+                        </div>
+
+                        <!-- Quick Benchmark Star Chips -->
+                        <div class="flex items-center gap-1.5 text-xs text-[#8B8F99]">
+                            <span class="font-mono text-[11px] text-[#5A5E68] mr-1">Presets:</span>
+                            <button onclick="setStarInput('KIC_5306984')" class="px-2.5 py-1 rounded bg-[#0B0C10] hover:bg-[#1C1F27] text-[#8B8F99] hover:text-[#EDEDEE] border border-[#262A33] text-[11px] font-mono transition">KIC_5306984</button>
+                            <button onclick="setStarInput('KIC_11442793')" class="px-2.5 py-1 rounded bg-[#0B0C10] hover:bg-[#1C1F27] text-[#8B8F99] hover:text-[#EDEDEE] border border-[#262A33] text-[11px] font-mono transition">KIC_11442793</button>
+                            <button onclick="setStarInput('KIC_10666592')" class="px-2.5 py-1 rounded bg-[#0B0C10] hover:bg-[#1C1F27] text-[#8B8F99] hover:text-[#EDEDEE] border border-[#262A33] text-[11px] font-mono transition">KIC_10666592</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+                        <div class="md:col-span-3 relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#5A5E68] font-mono text-xs">
+                                <i class="fa-solid fa-star text-[#E8A33D]"></i>
+                            </div>
+                            <input type="text" id="starInput" value="STAR_0037" onkeydown="if(event.key==='Enter') analyzeStar()" placeholder="e.g. STAR_0037 or KIC_5306984 or data/dev/STAR_0037.parquet" class="w-full bg-[#0B0C10] border border-[#262A33] rounded pl-9 pr-4 py-2 text-sm text-[#EDEDEE] font-mono focus:outline-none focus:border-[#E8A33D] transition">
+                        </div>
+                        <div>
+                            <button onclick="analyzeStar()" id="btnAnalyze" class="btn-signal w-full py-2 px-4 rounded text-xs font-semibold flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-play text-[10px]"></i>
+                                <span>Run Scientific Pipeline</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Ingestion / Arbitrary File Upload Section -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#262A33]">
+                        <div class="flex items-center gap-3">
+                            <label class="btn-hairline text-xs text-[#8B8F99] hover:text-[#EDEDEE] cursor-pointer flex items-center gap-2 transition">
+                                <i class="fa-solid fa-cloud-arrow-up text-[#E8A33D]"></i>
+                                <span>Upload Light Curve (CSV / Parquet / FITS)</span>
+                                <input type="file" id="lcFileInput" accept=".csv,.parquet,.fits,.fit" class="hidden" onchange="handleLightCurveUpload(event)">
+                            </label>
+                            <span id="uploadStatusText" class="text-[11px] font-mono text-[#8B8F99]"></span>
+                        </div>
+                        <div class="text-[11px] font-mono text-[#5A5E68]">
+                            Auto-detects BJD/BKJD/time, flux/sap_flux, cadence & quarter splits
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Pipeline Stage Progress Container -->
+                <div id="analysisProgressContainer" class="hidden p-5 rounded bg-[#15171D] border border-[#262A33] space-y-3">
+                    <div class="flex items-center justify-between text-xs font-mono">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-solid fa-circle-notch fa-spin text-[#E8A33D] text-sm"></i>
+                            <span id="analysisStageText" class="text-[#EDEDEE] font-semibold tracking-wide">Pipeline running</span>
+                        </div>
+                        <span id="analysisProgressPct" class="text-[#E8A33D] font-mono">0%</span>
+                    </div>
+                    <div class="h-1.5 bg-[#0B0C10] rounded overflow-hidden">
+                        <div id="analysisProgressBar" class="h-full bg-[#E8A33D] transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] font-mono text-[#8B8F99]">
+                        <span id="analysisDetailMsg" class="truncate">Preparing light curve adapter...</span>
+                        <span id="analysisRunId" class="text-[#5A5E68] flex-shrink-0 ml-2"></span>
+                    </div>
+                </div>
+
+                <!-- Analysis Results Panel (Populated dynamically) -->
+                <div id="starResultPanel" class="hidden space-y-6">
+                    
+                    <!-- NASA Exoplanet Archive Validation & Harmonic Warning Banner -->
+                    <div id="nasaValidationBanner" class="hidden p-4 rounded bg-[#15171D] border border-[#C77B4A] transition-all">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <div id="valIconContainer" class="w-8 h-8 rounded bg-[#0B0C10] border border-[#C77B4A]/40 flex items-center justify-center text-sm flex-shrink-0 mt-0.5 text-[#C77B4A]">
+                                    <i id="valIcon" class="fa-solid fa-triangle-exclamation"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h4 id="valTitle" class="text-xs font-medium font-mono text-[#EDEDEE]">PERIOD HARMONIC ALIAS DETECTED</h4>
+                                        <span id="valBadge" class="text-[10px] font-mono px-2 py-0.5 rounded border border-[#C77B4A]/40 bg-[#C77B4A]/10 text-[#C77B4A] uppercase">Warning</span>
+                                        <span id="valSourceTag" class="text-[10px] font-mono text-[#8B8F99] bg-[#0B0C10] px-2 py-0.5 rounded border border-[#262A33]">NASA Exoplanet Archive</span>
+                                    </div>
+                                    <p id="valDescription" class="text-xs text-[#8B8F99] mt-1">Local algorithm output deviates from verified NASA archival parameters by &gt; 5% tolerance.</p>
+                                    
+                                    <!-- Comparison Parameters Chips -->
+                                    <div id="valComparisonChips" class="flex flex-wrap items-center gap-2 mt-2 text-xs font-mono">
+                                        <span class="bg-[#0B0C10] border border-[#262A33] px-2 py-0.5 rounded text-[#EDEDEE]">
+                                            Algorithm: <strong id="valAlgPeriod" class="text-[#6FA8DC]">-- d</strong>
+                                        </span>
+                                        <span class="text-[#5A5E68]">vs</span>
+                                        <span class="bg-[#0B0C10] border border-[#262A33] px-2 py-0.5 rounded text-[#EDEDEE]">
+                                            NASA Ground Truth: <strong id="valTruthPeriod" class="text-[#E8A33D]">-- d</strong>
+                                            (<span id="valKoiName" class="text-[#8B8F99]">KOI</span>, <span id="valDisposition" class="text-[#5FB98C]">CONFIRMED</span>)
+                                        </span>
+                                        <span id="valDeviationChip" class="bg-[#C77B4A]/10 border border-[#C77B4A]/40 text-[#C77B4A] px-2 py-0.5 rounded text-[11px]">
+                                            Deviation: --
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Archival Toggle Action Button -->
+                            <div class="flex-shrink-0 flex items-center gap-2">
+                                <button id="btnToggleArchival" onclick="toggleArchivalMetrics()" class="btn-signal text-xs font-semibold px-3 py-1.5 rounded flex items-center gap-2">
+                                    <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
+                                    <span id="btnToggleArchivalText">Use Archival Parameters (NASA)</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Verdict & Scientific Telemetry Metrics -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-[#EDEDEE] flex items-center gap-2">
+                            <span>Scientific telemetry readouts</span>
+                        </span>
+                        <span id="metricsSourceBadge" class="text-[10px] font-mono text-[#8B8F99] bg-[#0B0C10] px-2.5 py-0.5 rounded border border-[#262A33]">
+                            SOURCE: PIPELINE ALGORITHM
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div id="verdictCard" class="p-4 rounded bg-[#15171D] border border-[#262A33] transition-all">
+                            <p class="font-mono text-[10px] text-[#5A5E68] uppercase">Classification Verdict</p>
+                            <h4 id="resPrediction" class="text-xl font-mono mt-1 text-[#5FB98C]">--</h4>
+                            <p class="text-[11px] text-[#8B8F99] mt-0.5">Thresholded posterior verdict</p>
+                        </div>
+                        <div class="p-4 rounded bg-[#15171D] border border-[#262A33] transition-all">
+                            <p class="font-mono text-[10px] text-[#5A5E68] uppercase">Calibrated Confidence</p>
+                            <h4 id="resConfidence" class="text-xl font-mono mt-1 text-[#EDEDEE]">--</h4>
+                            <p class="text-[11px] text-[#8B8F99] mt-0.5">Isotonic regression posterior</p>
+                        </div>
+                        <div class="p-4 rounded bg-[#15171D] border border-[#262A33] transition-all">
+                            <p class="font-mono text-[10px] text-[#5A5E68] uppercase">Orbital Period</p>
+                            <h4 id="resPeriod" class="text-xl font-mono mt-1 text-[#EDEDEE]">--</h4>
+                            <p class="text-[11px] text-[#8B8F99] mt-0.5">Harmonic BLS peak frequency</p>
+                        </div>
+                        <div class="p-4 rounded bg-[#15171D] border border-[#262A33] transition-all">
+                            <p class="font-mono text-[10px] text-[#5A5E68] uppercase">Depth & Duration</p>
+                            <h4 id="resDepthDuration" class="text-xl font-mono mt-1 text-[#EDEDEE]">--</h4>
+                            <p class="text-[11px] text-[#8B8F99] mt-0.5">Transit geometry profile</p>
+                        </div>
+                    </div>
+
+                    <!-- Contextual CARL Explanation Bar & System Notes Summary Deck -->
+                    <div class="p-4 rounded bg-[#15171D] border border-[#262A33] space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[#EDEDEE] font-medium text-xs flex items-center gap-1.5">
+                                    <i class="fa-solid fa-wand-magic-sparkles text-[#E8A33D]"></i> CARL Quick Explanations:
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button onclick="askAstraContext('Explain this detection in detail')" class="btn-hairline text-xs px-2.5 py-1 rounded text-[#8B8F99] hover:text-[#EDEDEE] flex items-center gap-1.5">
+                                    <i class="fa-solid fa-brain text-[#8B8F99]"></i> <span>Explain Detection</span>
+                                </button>
+                                <button onclick="askAstraContext('Explain the BLS periodogram and detected peak')" class="btn-hairline text-xs px-2.5 py-1 rounded text-[#8B8F99] hover:text-[#EDEDEE] flex items-center gap-1.5">
+                                    <i class="fa-solid fa-chart-simple text-[#8B8F99]"></i> <span>Explain BLS</span>
+                                </button>
+                                <button onclick="askAstraContext('Generate a scientific summary for this candidate')" class="btn-hairline text-xs px-2.5 py-1 rounded text-[#8B8F99] hover:text-[#EDEDEE] flex items-center gap-1.5">
+                                    <i class="fa-solid fa-file-lines text-[#8B8F99]"></i> <span>Scientific Summary</span>
+                                </button>
+                                <button onclick="askAstraContext('Why was this candidate accepted or rejected? Explain false positive checks.')" class="btn-hairline text-xs px-2.5 py-1 rounded text-[#8B8F99] hover:text-[#EDEDEE] flex items-center gap-1.5">
+                                    <i class="fa-solid fa-shield text-[#8B8F99]"></i> <span>Vetting & Rejection</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- System Notes / Physics Vetting Rejection Diagnostics Deck -->
+                        <div id="systemNotesDeck" class="hidden p-3 rounded bg-[#C77B4A]/10 border border-[#C77B4A]/40 text-[#C77B4A] text-xs font-mono flex items-start gap-3 transition-all">
+                            <i class="fa-solid fa-triangle-exclamation text-[#C77B4A] text-sm mt-0.5 flex-shrink-0"></i>
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-medium text-[#C77B4A]">PHYSICS VETTING CRITERIA FAILED · SYSTEM NOTES:</span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded bg-[#C77B4A]/20 text-[#C77B4A] border border-[#C77B4A]/40">Alert</span>
+                                </div>
+                                <p id="systemNotesContent" class="text-[#EDEDEE] font-sans text-xs leading-relaxed"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dominant Light Curve Workstation Charts -->
+                    <div class="grid grid-cols-1 gap-6">
+                        <!-- Chart 1: Full 4-Year SAP & Detrended Flux -->
+                        <div class="p-5 rounded bg-[#15171D] border border-[#262A33] space-y-3">
+                            <div class="flex items-center justify-between border-b border-[#262A33] pb-2">
+                                <h3 class="text-sm font-medium text-[#EDEDEE] flex items-center gap-2">
+                                    <i class="fa-solid fa-wave-square text-[#6FA8DC]"></i>
+                                    <span>Full 4-Year Kepler SAP Flux & Detrended Light Curve</span>
+                                </h3>
+                                <span class="text-[10px] font-mono text-[#5A5E68] bg-[#0B0C10] px-2 py-0.5 rounded border border-[#262A33]">30-min Cadence</span>
+                            </div>
+                            <div class="h-64">
+                                <canvas id="lcChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Phase-Folded Profile -->
+                        <div class="p-5 rounded bg-[#15171D] border border-[#262A33] space-y-3">
+                            <div class="flex items-center justify-between border-b border-[#262A33] pb-2">
+                                <h3 class="text-sm font-medium text-[#EDEDEE] flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-notch text-[#E8A33D]"></i>
+                                    <span>Phase-Folded Transit Profile & Residuals</span>
+                                </h3>
+                                <span class="text-[10px] font-mono text-[#8B8F99] bg-[#0B0C10] px-2.5 py-0.5 rounded border border-[#262A33]">Phase Binned</span>
+                            </div>
+                            <div class="h-64">
+                                <canvas id="foldedChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Candidate Vetting Diagnostics Table -->
+                    <div class="p-5 rounded bg-[#15171D] border border-[#262A33] space-y-3">
+                        <div class="flex items-center justify-between border-b border-[#262A33] pb-3">
+                            <h3 class="text-sm font-medium text-[#EDEDEE] flex items-center gap-2">
+                                <i class="fa-solid fa-list-check text-[#5FB98C]"></i>
+                                <span>Extracted Harmonic Candidates & Physics Vetting Matrix</span>
+                            </h3>
+                            <span class="font-mono text-[10px] text-[#5A5E68]">Odd/Even • Secondary Eclipse • Quarter Recurrence</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left text-[#EDEDEE]">
+                                <thead class="bg-[#0B0C10] text-[#8B8F99] font-sans text-xs">
+                                    <tr>
+                                        <th class="p-2.5 font-medium">Period (d)</th>
+                                        <th class="p-2.5 font-medium">Depth (ppm)</th>
+                                        <th class="p-2.5 font-medium">Duration (h)</th>
+                                        <th class="p-2.5 font-medium">BLS SDE</th>
+                                        <th class="p-2.5 font-medium">Odd/Even</th>
+                                        <th class="p-2.5 font-medium">Sec Eclipse</th>
+                                        <th class="p-2.5 font-medium">Q Recurrence</th>
+                                        <th class="p-2.5 font-medium">ML Conf</th>
+                                        <th class="p-2.5 text-right font-medium">CARL</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="candidatesTableBody" class="divide-y divide-[#262A33] font-mono">
+                                    <tr>
+                                        <td colspan="9" class="p-4 text-center text-[#5A5E68]">Run an analysis to inspect candidates.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- NASA & MAST Cross-Validation Authority Engine Card -->
+                    <div id="nasaCrossValidationSection" class="p-5 rounded bg-[#15171D] border border-[#262A33] space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#262A33] pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <i class="fa-solid fa-satellite text-[#8B8F99] text-base"></i>
+                                <div>
+                                    <h3 class="text-sm font-medium text-[#EDEDEE] flex items-center gap-2">
+                                        <span>NASA & MAST Cross-Validation Engine</span>
+                                        <span id="nasaValStatusBadge" class="text-[10px] font-mono px-2.5 py-0.5 rounded uppercase font-medium bg-[#0B0C10] text-[#8B8F99] border border-[#262A33]">UNVERIFIED</span>
+                                    </h3>
+                                    <p class="text-xs text-[#8B8F99] mt-0.5">Multi-table cross-referencing against NASA Exoplanet Archive (PS/KOI/TCE) & STScI MAST</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span id="nasaMastChip" class="text-[11px] font-mono px-2.5 py-1 rounded bg-[#0B0C10] border border-[#262A33] text-[#8B8F99]">
+                                    <i class="fa-solid fa-database text-[#8B8F99] mr-1"></i> MAST: --
+                                </span>
+                                <button id="btnRefreshNasaVal" onclick="refreshNasaValidation()" class="btn-hairline text-xs font-mono px-3 py-1 rounded text-[#8B8F99] hover:text-[#EDEDEE] flex items-center gap-1.5">
+                                    <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
+                                    <span>Refresh NASA</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- NASA Telemetry & Comparison Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left text-[#EDEDEE]">
+                                <thead class="bg-[#0B0C10] text-[#8B8F99] font-sans text-xs">
+                                    <tr>
+                                        <th class="p-2.5 font-medium">Parameter</th>
+                                        <th class="p-2.5 font-medium">COSMOS Pipeline</th>
+                                        <th class="p-2.5 font-medium">NASA Archival Ground Truth</th>
+                                        <th class="p-2.5 font-medium">Deviation / Ratio</th>
+                                        <th class="p-2.5 text-right font-medium">Validation Check</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="nasaComparisonTableBody" class="divide-y divide-[#262A33] font-mono">
+                                    <tr>
+                                        <td colspan="5" class="p-3 text-center text-[#5A5E68]">Run target analysis to cross-reference with NASA archives.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Validation Notes & Clickable Source Links -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 text-xs border-t border-[#262A33]">
+                            <div id="nasaValidationNotes" class="text-[#8B8F99] font-mono text-[11px]">
+                                Canonical Target: <span id="nasaCanonicalId" class="text-[#EDEDEE] font-medium">--</span> • Status: <span id="nasaDispositionText" class="text-[#8B8F99]">Awaiting Search</span>
+                            </div>
+                            <div class="flex items-center gap-3 font-mono text-[11px]">
+                                <span class="text-[#5A5E68]">Sources:</span>
+                                <a id="linkNasaArchive" href="https://exoplanetarchive.ipac.caltech.edu" target="_blank" class="text-[#6FA8DC] hover:underline flex items-center gap-1">
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> NASA Archive
+                                </a>
+                                <a id="linkKoiTable" href="https://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=cumulative" target="_blank" class="text-[#6FA8DC] hover:underline flex items-center gap-1">
+                                    <i class="fa-solid fa-table text-[9px]"></i> KOI Table
+                                </a>
+                                <a id="linkTceTable" href="https://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=q1_q17_dr25_tce" target="_blank" class="text-[#6FA8DC] hover:underline flex items-center gap-1">
+                                    <i class="fa-solid fa-table text-[9px]"></i> TCE Table
+                                </a>
+                                <a id="linkMastArchive" href="https://mast.stsci.edu" target="_blank" class="text-[#6FA8DC] hover:underline flex items-center gap-1">
+                                    <i class="fa-solid fa-satellite text-[9px]"></i> MAST STScI
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+
+
+
+
+
+
+            <!-- ===========================================================
+                 MODULE 6: OPERATIONS // BATCH PROCESSING (Scientific Console)
+            ============================================================ -->
+            <section id="view-batch" class="hidden space-y-6">
+                <div class="p-6 rounded bg-[#15171D] border border-[#262A33] space-y-4">
+                    <div>
+                        <div class="inline-flex items-center gap-2 font-mono text-[11px] text-[#8B8F99]">
+                            <i class="fa-solid fa-layer-group text-[#E8A33D]"></i>
+                            <span>Mass photometric dataset runner</span>
+                        </div>
+                        <h3 class="text-base font-medium text-[#EDEDEE] mt-1">Batch Candidate Screening Console</h3>
+                        <p class="text-xs text-[#8B8F99] mt-0.5">Executes coarse-to-fine transit detection across parquet light curve directories.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end pt-2">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-mono text-[#8B8F99] mb-1">Target Directory (Parquet Light Curves)</label>
+                            <input type="text" id="batchDirInput" value="data/dev" class="w-full bg-[#0B0C10] border border-[#262A33] rounded px-3 py-2 text-sm text-[#EDEDEE] font-mono focus:outline-none focus:border-[#E8A33D]">
+                        </div>
+                        <div>
+                            <button onclick="startBatchJob()" id="btnStartBatch" class="btn-signal w-full py-2 px-4 rounded text-xs font-semibold flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-microchip text-[10px]"></i> <span>Start Batch Job</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Progress Indicator -->
+                    <div id="batchProgressContainer" class="hidden mt-6 space-y-2">
+                        <div class="flex justify-between text-xs font-mono text-[#8B8F99]">
+                            <span id="batchStatusText">Processing...</span>
+                            <span id="batchPercentText" class="text-[#E8A33D] font-mono">0%</span>
+                        </div>
+                        <div class="h-1.5 bg-[#0B0C10] rounded overflow-hidden">
+                            <div id="batchProgressBar" class="h-full bg-[#E8A33D] transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Batch Results Table -->
+                <div id="batchResultsPanel" class="p-5 rounded bg-[#15171D] border border-[#262A33] hidden space-y-3">
+                    <h3 class="text-sm font-medium text-[#EDEDEE] flex items-center gap-2">
+                        <i class="fa-solid fa-table-list text-[#8B8F99]"></i>
+                        <span>Batch Detections & Verified Transits</span>
+                    </h3>
+                    <div class="overflow-x-auto max-h-96">
+                        <table class="w-full text-xs text-left text-[#EDEDEE]">
+                            <thead class="bg-[#0B0C10] text-[#8B8F99] font-sans text-xs sticky top-0">
+                                <tr>
+                                    <th class="p-2.5 font-medium">Star ID</th>
+                                    <th class="p-2.5 font-medium">Verdict</th>
+                                    <th class="p-2.5 font-medium">Confidence</th>
+                                    <th class="p-2.5 font-medium">Period (d)</th>
+                                    <th class="p-2.5 font-medium">Depth (ppm)</th>
+                                    <th class="p-2.5 font-medium">Duration (h)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batchTableBody" class="divide-y divide-[#262A33] font-mono"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ===========================================================
+                 MODULE 7: OPERATIONS // SUBMISSION & VALIDATOR
+            ============================================================ -->
+            <section id="view-submission" class="hidden space-y-6">
+                <div class="p-6 rounded bg-[#15171D] border border-[#262A33] space-y-4">
+                    <div>
+                        <div class="inline-flex items-center gap-2 font-mono text-[11px] text-[#8B8F99]">
+                            <i class="fa-solid fa-file-export text-[#E8A33D]"></i>
+                            <span>Competition submission control</span>
+                        </div>
+                        <h3 class="text-base font-medium text-[#EDEDEE] mt-1">Official Submission Generator & Schema Validator</h3>
+                        <p class="text-xs text-[#8B8F99] mt-0.5">Generates strictly compliant CSV format matching official scoring criteria (88 lines: 1 header + 87 test stars).</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end pt-2">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-mono text-[#8B8F99] mb-1">Target Evaluation Split Directory</label>
+                            <input type="text" id="subDirInput" value="data/private_test" class="w-full bg-[#0B0C10] border border-[#262A33] rounded px-3 py-2 text-sm text-[#EDEDEE] font-mono focus:outline-none focus:border-[#E8A33D]">
+                        </div>
+                        <div class="space-y-2">
+                            <button onclick="generateSub()" id="btnGenSub" class="btn-signal w-full py-2 px-4 rounded text-xs font-semibold flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-file-arrow-down text-[10px]"></i> <span>Generate & Validate CSV</span>
+                            </button>
+                            <a href="/api/submission/download" id="btnDownloadSub" class="hidden w-full btn-hairline py-2 px-4 rounded text-xs font-medium text-center text-[#EDEDEE] flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-download text-[#E8A33D]"></i> <span>Download submission_antigravity.csv</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Validation Output Terminal -->
+                <div id="subValidationResult" class="p-5 rounded bg-[#15171D] border border-[#262A33] hidden space-y-3">
+                    <h3 class="text-sm font-medium text-[#EDEDEE] flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-[#5FB98C]"></i>
+                        <span>Validation Checklist & Verification Report</span>
+                    </h3>
+                    <div id="subValidationText" class="text-xs text-[#EDEDEE] font-mono bg-[#0B0C10] p-4 rounded border border-[#262A33] whitespace-pre-wrap leading-relaxed"></div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+
+    <!-- ===================================================================
+         CARL SLIDE-OUT DRAWER (Persistent Assistant)
+    ==================================================================== -->
+    <div id="astraDrawer" class="fixed top-0 right-0 h-full w-full sm:w-[480px] bg-[#15171D] border-l border-[#262A33] z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
+        <!-- CARL Header -->
+        <div class="p-4 border-b border-[#262A33] flex items-center justify-between bg-[#15171D]">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-7 h-7 rounded bg-[#1C1F27] border border-[#262A33] flex items-center justify-center text-[#E8A33D] text-xs">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-[#EDEDEE]">CARL</h3>
+                    <p class="text-[11px] text-[#8B8F99]">Scientific Astronomy & Transit Assistant</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <!-- Persona Mode Selector -->
+                <select id="astraModeSelect" onchange="changeAstraMode()" class="bg-[#0B0C10] border border-[#262A33] text-xs text-[#EDEDEE] rounded px-2.5 py-1 font-mono focus:outline-none focus:border-[#E8A33D]">
+                    <option value="SCIENTIST" selected>Scientist Mode</option>
+                    <option value="BEGINNER">Beginner Mode</option>
+                    <option value="ENGINEER">Engineer Mode</option>
+                </select>
+                <button onclick="toggleAstraDrawer()" class="text-[#8B8F99] hover:text-[#EDEDEE] p-1.5 rounded hover:bg-[#1C1F27] transition">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Active Context Panel -->
+        <div class="p-3 bg-[#0B0C10] border-b border-[#262A33] text-[11px] text-[#8B8F99] flex items-center justify-between font-mono">
+            <div class="flex items-center gap-2">
+                <span class="status-indicator-dot ok"></span>
+                <span>TARGET: <strong id="astraContextStar" class="text-[#EDEDEE]">STAR_0001</strong></span>
+                <span id="astraContextPeriod" class="text-[#8B8F99] ml-1">P: 82.53d</span>
+            </div>
+            <div id="astraToolBadge" class="text-[10px] text-[#5A5E68] flex items-center gap-1">
+                <i class="fa-solid fa-shield-halved text-[#5FB98C]"></i> Controlled Tools
+            </div>
+        </div>
+
+        <!-- Live Tool Activity Box -->
+        <div id="astraToolActivity" class="hidden px-4 py-2 bg-[#0B0C10] border-b border-[#262A33] text-[11px] text-[#8B8F99] space-y-1 font-mono">
+            <p class="text-[#E8A33D] font-medium flex items-center gap-1"><i class="fa-solid fa-gear fa-spin text-[#E8A33D]"></i> Running Tools:</p>
+            <div id="astraToolSteps" class="space-y-0.5 text-[#5A5E68] pl-3"></div>
+        </div>
+
+        <!-- Chat Message Area -->
+        <div id="astraMessages" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs leading-relaxed bg-[#15171D]">
+            <div class="flex gap-2.5">
+                <div class="w-6 h-6 rounded bg-[#1C1F27] border border-[#262A33] flex-shrink-0 flex items-center justify-center text-[#E8A33D] text-[10px]">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <div class="bg-[#0B0C10] border border-[#262A33] rounded p-3 text-[#EDEDEE] space-y-2">
+                    <p>Greetings! I am <strong>CARL</strong>, your AI assistant for exoplanet transit detection and astronomical data analysis. I have direct access to our Kepler detection pipeline, candidate vetting matrices, BLS periodograms, and celestial catalogs.</p>
+                    <p class="text-[#8B8F99] text-[11px]">Ask me to explain any detection, compare orbital harmonics, diagnose false positives, or explore celestial coordinates!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input & Voice Controls -->
+        <div class="p-3 border-t border-[#262A33] bg-[#0B0C10] space-y-2">
+            <!-- Quick prompt chips -->
+            <div class="flex space-x-1.5 overflow-x-auto pb-1 text-[11px] font-mono">
+                <button onclick="sendQuickPrompt('Explain this candidate in detail')" class="whitespace-nowrap px-2.5 py-1 bg-[#15171D] hover:bg-[#1C1F27] text-[#8B8F99] hover:text-[#EDEDEE] rounded border border-[#262A33] transition">Explain candidate</button>
+                <button onclick="sendQuickPrompt('Why was this candidate accepted or rejected?')" class="whitespace-nowrap px-2.5 py-1 bg-[#15171D] hover:bg-[#1C1F27] text-[#8B8F99] hover:text-[#EDEDEE] rounded border border-[#262A33] transition">Why rejected?</button>
+                <button onclick="sendQuickPrompt('Compare the top candidates')" class="whitespace-nowrap px-2.5 py-1 bg-[#15171D] hover:bg-[#1C1F27] text-[#8B8F99] hover:text-[#EDEDEE] rounded border border-[#262A33] transition">Compare candidates</button>
+                <button onclick="sendQuickPrompt('What is our model validation accuracy?')" class="whitespace-nowrap px-2.5 py-1 bg-[#15171D] hover:bg-[#1C1F27] text-[#8B8F99] hover:text-[#EDEDEE] rounded border border-[#262A33] transition">Model metrics</button>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button id="btnVoice" onclick="toggleVoiceInput()" title="Push to talk voice query" class="w-8 h-8 rounded bg-[#15171D] hover:bg-[#1C1F27] text-[#8B8F99] hover:text-[#EDEDEE] border border-[#262A33] flex items-center justify-center transition">
+                    <i id="voiceIcon" class="fa-solid fa-microphone text-xs"></i>
+                </button>
+                <input type="text" id="astraInput" onkeydown="if(event.key==='Enter') sendAstraChat()" placeholder="Ask CARL about this star or transit..." class="flex-1 bg-[#15171D] border border-[#262A33] rounded px-3 py-1.5 text-xs text-[#EDEDEE] focus:outline-none focus:border-[#E8A33D] font-sans">
+                <button onclick="sendAstraChat()" class="btn-signal w-8 h-8 rounded flex items-center justify-center transition">
+                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===================================================================
+         GLOBAL COMMAND PALETTE MODAL (Ctrl + K / Search)
+    ==================================================================== -->
+    <div id="commandPaletteModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-start justify-center pt-20 px-4">
+        <div class="w-full max-w-xl bg-[#15171D] border border-[#262A33] p-4 rounded space-y-3">
+            <div class="flex items-center gap-3 border-b border-[#262A33] pb-3">
+                <i class="fa-solid fa-magnifying-glass text-[#8B8F99] text-sm"></i>
+                <input type="text" id="cmdPaletteInput" oninput="filterCommandPalette(this.value)" placeholder="Type a star ID, module name, or action..." class="flex-1 bg-transparent text-sm text-[#EDEDEE] placeholder-[#5A5E68] focus:outline-none font-mono">
+                <kbd class="px-2 py-0.5 rounded bg-[#0B0C10] text-[10px] font-mono text-[#5A5E68] border border-[#262A33]">ESC</kbd>
+            </div>
+
+            <div id="cmdPaletteResults" class="space-y-1 max-h-72 overflow-y-auto text-xs">
+                <!-- Default Quick Suggestions -->
+                <div class="p-2 text-[#5A5E68] font-mono text-[10px] uppercase">Navigation & Modules</div>
+                <div onclick="cmdNavigate('dashboard')" class="p-2.5 rounded hover:bg-[#1C1F27] cursor-pointer flex items-center justify-between text-[#EDEDEE]">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-gauge-high text-[#8B8F99]"></i> Mission Control</span>
+                    <span class="font-mono text-[10px] text-[#5A5E68]">Module 1</span>
+                </div>
+                <div onclick="cmdNavigate('analyzer')" class="p-2.5 rounded hover:bg-[#1C1F27] cursor-pointer flex items-center justify-between text-[#EDEDEE]">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-magnifying-glass-chart text-[#8B8F99]"></i> Star Light Curve Analyzer</span>
+                    <span class="font-mono text-[10px] text-[#5A5E68]">Module 2</span>
+                </div>
+
+                <div class="p-2 text-[#5A5E68] font-mono text-[10px] uppercase mt-2">Target Star Presets</div>
+                <div onclick="cmdQuickStar('KIC_5306984')" class="p-2.5 rounded hover:bg-[#1C1F27] cursor-pointer flex items-center justify-between text-[#EDEDEE]">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-star text-[#E8A33D]"></i> KIC_5306984 (Confirmed Transit, P=82.53d)</span>
+                    <span class="font-mono text-[10px] text-[#5FB98C]">97.8% Conf</span>
+                </div>
+                <div onclick="cmdQuickStar('KIC_11442793')" class="p-2.5 rounded hover:bg-[#1C1F27] cursor-pointer flex items-center justify-between text-[#EDEDEE]">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-star text-[#E8A33D]"></i> KIC_11442793 (P=19.24d)</span>
+                    <span class="font-mono text-[10px] text-[#5FB98C]">91.4% Conf</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/api.js?v=2.2"></script>
+    <script src="/static/app.js?v=2.2"></script>
+</body>
+</html>

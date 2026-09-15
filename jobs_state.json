@@ -1,0 +1,29 @@
+{
+  "3d23bd3b": {
+    "job_id": "3d23bd3b",
+    "job_type": "batch_analysis",
+    "status": "running",
+    "progress": 0.4719,
+    "total_stars": 89,
+    "completed_stars": 42,
+    "created_at": 1789323081.9868863,
+    "updated_at": 1789323856.4894319,
+    "elapsed_seconds": 774.5025455951691,
+    "errors": [],
+    "results": []
+  },
+  "834c296e": {
+    "job_id": "834c296e",
+    "job_type": "batch_analysis",
+    "status": "running",
+    "progress": 0.5056,
+    "total_stars": 89,
+    "completed_stars": 45,
+    "created_at": 1789391427.6276035,
+    "updated_at": 1789392350.9254992,
+    "elapsed_seconds": 923.3,
+    "errors": [],
+    "results": [],
+    "mode": "REAL"
+  }
+}

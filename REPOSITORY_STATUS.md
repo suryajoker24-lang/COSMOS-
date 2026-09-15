@@ -2,34 +2,31 @@
 
 This branch is the cleanup/integration branch for the COSMOS project.
 
-## Changes completed
+## Completed in this integration pass
 
-- README rewritten to describe the scientific workflow, API, submission format, and reproducibility expectations accurately.
-- `.gitignore` added to keep private datasets, local databases, credentials, caches, virtual environments, and generated submission artifacts out of the public repository.
-- Existing scientific documentation retained rather than replacing it with unsupported claims.
-
-## Source integration status
-
-The uploaded local project contains a newer structured implementation under `backend/`, `pipeline/`, and `src/`, while the public repository currently contains an older/root-level implementation as well. These implementations should not be blindly concatenated: several modules use different import paths and data models.
-
-The safe integration target is:
-
-```text
-backend/       FastAPI + ASTRA + job orchestration
-src/           canonical scientific engine
-pipeline/      compatibility/service layer
-app/           CLI
-frontend/      browser UI
-scripts/       reproducible workflows
-models/        trained artifacts (only non-sensitive artifacts)
-tests/         automated tests
-docs/          scientific documentation
-```
-
-Before replacing the root-level implementation, run the complete test/evaluation suite against the uploaded local source and reconcile import paths, model artifacts, and API contracts. This avoids publishing a repository that looks cleaner but no longer executes.
+- README rewritten around the real scientific workflow and current runnable commands.
+- `.gitignore` added to keep private datasets, secrets, caches, virtual environments and generated submissions out of source control.
+- A canonical `pipeline/` Python package was added for ingestion, preprocessing, detrending, BLS search, optional TLS refinement, vetting, features, ranking, GP fallback and submission formatting.
+- The obsolete root-level `pipeline.py` implementation was removed to eliminate the module/package ambiguity.
+- FastAPI `backend/main.py` and `backend/detect.py` now route analysis through the canonical pipeline rather than the old `src.*` implementation.
+- A reproducible `scripts/train_ranker.py` workflow was added with star-grouped cross-validation and explicit handling of catalogue labels versus injected transit truth.
+- `scripts/make_submission.py` was added for deterministic submission generation.
+- Submission validation now enforces the six-column schema, binary predictions, confidence bounds, blank characterization for negatives, and optional expected row count.
+- Basic pipeline/submission contract tests were added.
+- TLS is declared as an optional refinement dependency.
 
 ## Scientific integrity
 
 NASA/MAST validation is independent from the challenge prediction pipeline. It must never be used to fabricate labels for anonymized `STAR_####` targets. Missing archival records are `UNVERIFIED`, not `NASA CONFLICT`.
 
-Competition submission files must be generated from the final evaluated pipeline and validated against the official six-column format before upload.
+The challenge specification requires careful treatment of long-period signals, shallow transits, stellar variability, quarter discontinuities, and candidate vetting. The canonical pipeline therefore uses frequency-spaced coarse-to-fine BLS and a transit-masked second detrending pass before optional TLS refinement.
+
+## Remaining engineering work
+
+1. Run the canonical package in a clean Python 3.11 environment with the pinned dependencies.
+2. Execute the full train/dev benchmark and compare it against the historical ablation artifacts.
+3. Replace any stale UI/API modules that still reference `src.*` paths with the canonical `pipeline.*` API.
+4. Add a real end-to-end regression test against a known injected training signal when challenge data are available locally.
+5. Keep generated/private results out of the public repository unless deliberately curated as small reproducible artifacts.
+
+Do not claim a leaderboard win from repository structure alone. Scientific performance must be demonstrated by reproducible train/dev evaluation.

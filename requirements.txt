@@ -6,7 +6,6 @@ pyarrow==21.0.0
 astropy==8.0.1
 scikit-learn==1.9.1
 lightgbm==4.7.0
-matplotlib==3.11.2
 fastapi==0.115.0
 uvicorn==0.30.0
 pydantic==2.11.7
@@ -15,4 +14,5 @@ SQLAlchemy==2.0.43
 joblib==1.6.0
 astroquery>=0.4.7
 wotan>=1.10
+transitleastsquares>=1.32
 pytest==8.3.0

@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Secrets / local configuration
+.env
+.env.*
+!.env.example
+
+# Local databases and runtime state
+*.db
+*.sqlite
+*.sqlite3
+backend/*/jobs_state.json
+
+# Challenge/private data and generated large artifacts
+data/raw/
+data/private/
+data/uploads/
+data/nasa_cache/
+results/
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.joblib
+
+# Generated submissions are kept locally unless intentionally published
+submission_*.csv
+
+# Frontend/build tooling
+node_modules/
+dist/
+build/
+.vite/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
